@@ -1,6 +1,8 @@
 package me.akhalef;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.ThreadingModel;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -8,9 +10,15 @@ public class MainVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
+          DeploymentOptions options = new DeploymentOptions()
+      .setInstances(8)
+      .setThreadingModel(ThreadingModel.WORKER)
+      .setWorkerPoolName("hello-worker-pool")
+      .setWorkerPoolSize(16);
+  vertx.deployVerticle("me.akhalef.HelloVerticle", options);
 
-        vertx.deployVerticle(new HelloVerticle());
         Router router = Router.router(vertx);
+
         router.get("/api/v1/hello")
                 .handler(this::helloVertx);
 

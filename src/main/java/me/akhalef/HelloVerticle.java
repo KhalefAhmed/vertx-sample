@@ -9,7 +9,8 @@ public class HelloVerticle extends AbstractVerticle {
         // Single consumer for the address. Decide reply based on the message body.
         vertx.eventBus().consumer("hello.vertx.address", msg -> {
             Object body = msg.body();
-            System.out.println("Received message on hello.vertx.address: " + body);
+            String thread = Thread.currentThread().getName();
+            System.out.println("[" + thread + "] Received message on hello.vertx.address: " + body);
             if (body == null || body.toString().isEmpty()) {
                 msg.reply("Hello from Vert.x!");
             } else {
