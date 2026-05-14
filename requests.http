@@ -1,0 +1,9 @@
+# curl -i http://localhost:8080/api/v1/hello/Ahmed
+GET http://localhost:8080/api/v1/hello/Ahmed
+
+###
+
+# curl -i http://localhost:8080/api/v1/hello
+GET http://localhost:8080/api/v1/hello
+
+###
