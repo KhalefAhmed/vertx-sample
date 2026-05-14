@@ -2,23 +2,40 @@ package me.akhalef;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 
 public class MainVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
+
+        vertx.deployVerticle(new HelloVerticle());
         Router router = Router.router(vertx);
         router.get("/api/v1/hello")
-                .handler(ctx -> ctx.request().response()
-                        .putHeader("content-type", "text/plain")
-                        .end("Hello, World!"));
+                .handler(this::helloVertx);
 
         router.get("/api/v1/hello/:name")
-                .handler(ctx -> ctx.request().response().putHeader("content-type", "text/plain")
-                        .end("Hello, " + ctx.request().getParam("name") + "!"));
+                .handler(this::helloName);
 
         vertx.createHttpServer()
                 .requestHandler(router)
                 .listen(8080);
+    }
+
+    void helloVertx(RoutingContext ctx) {
+        vertx.eventBus().request("hello.vertx.address", "")
+                .onSuccess(reply -> ctx.response().end(reply.body().toString()))
+                .onFailure(err -> ctx.response()
+                        .setStatusCode(500)
+                        .end(err.getMessage()));
+    }
+
+    void helloName(RoutingContext ctx) {
+        String name = ctx.request().getParam("name");
+        vertx.eventBus().request("hello.vertx.address", name)
+                .onSuccess(reply -> ctx.response().end(reply.body().toString()))
+                .onFailure(err -> ctx.response()
+                        .setStatusCode(500)
+                        .end(err.getMessage()));
     }
 }
