@@ -1,16 +1,26 @@
 package me.akhalef;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 public class MainVerticle extends AbstractVerticle {
 
     @Override
-    public void start() {
+    public void start(Promise<Void> startPromise) {
+        DeploymentOptions options = new DeploymentOptions().setInstances(4);
 
-        vertx.deployVerticle(new HelloVerticle());
+        vertx.deployVerticle("me.akhalef.HelloVerticle", options)
+                .onSuccess(id -> {
+                    setupRouter();
+                    startPromise.complete();
+                })
+                .onFailure(startPromise::fail);
+    }
 
+    private void setupRouter() {
         Router router = Router.router(vertx);
 
         router.get("/api/v1/hello")
@@ -23,9 +33,9 @@ public class MainVerticle extends AbstractVerticle {
         try {
             httpPort = Integer.parseInt(System.getProperty("http.port", "8080"));
         } catch (NumberFormatException e) {
-            System.err.println("Invalid http.port value, defaulting to 8080");
             httpPort = 8080;
         }
+
         vertx.createHttpServer()
                 .requestHandler(router)
                 .listen(httpPort);
