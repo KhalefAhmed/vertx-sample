@@ -10,12 +10,13 @@ public class MainVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
-          DeploymentOptions options = new DeploymentOptions()
-      .setInstances(8)
-      .setThreadingModel(ThreadingModel.WORKER)
-      .setWorkerPoolName("hello-worker-pool")
-      .setWorkerPoolSize(16);
-  vertx.deployVerticle("me.akhalef.HelloVerticle", options);
+        DeploymentOptions options = new DeploymentOptions()
+                .setInstances(8)
+                .setThreadingModel(ThreadingModel.WORKER)
+                .setWorkerPoolName("hello-worker-pool")
+                .setWorkerPoolSize(16);
+        
+        vertx.deployVerticle("me.akhalef.HelloVerticle", options);
 
         Router router = Router.router(vertx);
 
