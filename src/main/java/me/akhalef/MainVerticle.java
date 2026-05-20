@@ -1,8 +1,6 @@
 package me.akhalef;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.ThreadingModel;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -10,13 +8,8 @@ public class MainVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
-        DeploymentOptions options = new DeploymentOptions()
-                .setInstances(8)
-                .setThreadingModel(ThreadingModel.WORKER)
-                .setWorkerPoolName("hello-worker-pool")
-                .setWorkerPoolSize(16);
-        
-        vertx.deployVerticle("me.akhalef.HelloVerticle", options);
+
+        vertx.deployVerticle(new HelloVerticle());
 
         Router router = Router.router(vertx);
 
@@ -26,9 +19,16 @@ public class MainVerticle extends AbstractVerticle {
         router.get("/api/v1/hello/:name")
                 .handler(this::helloName);
 
+        int httpPort;
+        try {
+            httpPort = Integer.parseInt(System.getProperty("http.port", "8080"));
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid http.port value, defaulting to 8080");
+            httpPort = 8080;
+        }
         vertx.createHttpServer()
                 .requestHandler(router)
-                .listen(8080);
+                .listen(httpPort);
     }
 
     void helloVertx(RoutingContext ctx) {

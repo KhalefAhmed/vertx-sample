@@ -2,11 +2,13 @@ package me.akhalef;
 
 import io.vertx.core.AbstractVerticle;
 
+import java.util.UUID;
+
 public class HelloVerticle extends AbstractVerticle {
 
+    String verticleId = UUID.randomUUID().toString();
     @Override
     public void start() {
-        // Single consumer for the address. Decide reply based on the message body.
         vertx.eventBus().consumer("hello.vertx.address", msg -> {
             Object body = msg.body();
             String thread = Thread.currentThread().getName();
@@ -15,7 +17,7 @@ public class HelloVerticle extends AbstractVerticle {
                 msg.reply("Hello from Vert.x!");
             } else {
                 String name = body.toString();
-                msg.reply(String.format("Hello, %s!", name));
+                msg.reply(String.format("Hello %s, from %s!", name, verticleId));
             }
         });
     }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan>
+    <cache-container default-cache="default">
+        <local-cache name="default"/>
+        <local-cache name="__vertx.subs"/>
+        <local-cache name="__vertx.haInfo"/>
+        <local-cache name="__vertx.nodeInfo"/>
+    </cache-container>
+
+    <jgroups>
+        <stack name="jgroups">
+            <TCP bind_port="7800" bind_addr="127.0.0.1"/>
+            <tcp.TCPGOSSIP initial_hosts="127.0.0.1[7800],127.0.0.1[7801]"/>
+            <VERIFY_SUSPECT timeout="1500"/>
+            <pbcast.NAKACK2 use_mcast_xmit="false"/>
+            <UNICAST3/>
+            <pbcast.STABLE desired_avg_gap="5000" max_bytes="4M"/>
+            <pbcast.GMS print_local_addr="true" join_timeout="2000"/>
+            <MFC max_credits="2M" min_threshold="0.4"/>
+            <FRAG4/>
+        </stack>
+    </jgroups>
+</infinispan>
