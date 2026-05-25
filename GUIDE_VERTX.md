@@ -1,19 +1,19 @@
-# VERT.X - GUIDE COMPLET
+# VERT.X - COMPLETE GUIDE
 
-## Vue d'ensemble
+## Overview
 
-Vert.x est framework **event-driven** et **non-bloquant** pour construire des applications distribuées.
+Vert.x is an **event-driven** and **non-blocking** framework for building distributed applications.
 
 ---
 
-## 3 CONCEPTS CLÉS
+## 3 KEY CONCEPTS
 
-### 1️⃣ VERTICLES (Acteurs)
+### 1️⃣ VERTICLES (Actors)
 ```
-Chaque verticle = unité d'exécution indépendante
+Each verticle = independent execution unit
 
 ┌────────────────┐
-│ MainVerticle   │ (Lance HTTP server + déploie autres)
+│ MainVerticle   │ (Starts HTTP server + deploys others)
 └────────────────┘
         ├─ HelloVerticle (4 instances)
         ├─ DatabaseVerticle (2 instances)
@@ -21,10 +21,10 @@ Chaque verticle = unité d'exécution indépendante
         └─ EventSubscriberVerticle (3 instances)
 ```
 
-**Déploiement multiple:**
+**Multiple deployment:**
 ```java
 new DeploymentOptions().setInstances(4)
-// Lance 4 copies du même verticle en parallèle
+// Launches 4 copies of the same verticle in parallel
 ```
 
 ---
@@ -35,22 +35,22 @@ new DeploymentOptions().setInstances(4)
 ```
 Client (MainVerticle)
     ↓ eventBus.request("hello.vertx.address", "Ahmed")
-    ↓ [Infinispan décide LEQUEL HelloVerticle répond]
-Handler (HelloVerticle instance 2) reçoit SEUL
+    ↓ [Infinispan decides WHICH HelloVerticle responds]
+Handler (HelloVerticle instance 2) receives ONLY
     ↓ msg.reply("Hello Ahmed, from 2!")
-Réponse retourne au client
+Response returns to client
 ```
 
-**Exemple:**
+**Example:**
 ```java
 // Client
 vertx.eventBus().request("hello.vertx.address", "Ahmed")
     .onSuccess(reply -> console.log(reply.body()))  // "Hello Ahmed, from abc123!"
     .onFailure(err -> console.log(err));
 
-// Serveur (HelloVerticle)
+// Server (HelloVerticle)
 vertx.eventBus().consumer("hello.vertx.address", msg -> {
-    msg.reply("Hello " + msg.body() + "!");  // REPLY = réponse au sender
+    msg.reply("Hello " + msg.body() + "!");  // REPLY = response to sender
 });
 ```
 
@@ -60,67 +60,67 @@ vertx.eventBus().consumer("hello.vertx.address", msg -> {
 ```
 EventPublisherVerticle
     ↓ eventBus.publish("system.events", "Event-123")
-    ↓ [Infinispan distribue à TOUS les subscribers]
-EventSubscriberVerticle #1 reçoit
-EventSubscriberVerticle #2 reçoit
-EventSubscriberVerticle #3 reçoit
+    ↓ [Infinispan distributes to ALL subscribers]
+EventSubscriberVerticle #1 receives
+EventSubscriberVerticle #2 receives
+EventSubscriberVerticle #3 receives
 ```
 
-**Exemple:**
+**Example:**
 ```java
 // Publisher (EventPublisherVerticle)
 vertx.eventBus().publish("system.events", "Event-123");
-// Pas de reply()!
+// No reply()!
 
 // Subscribers (EventSubscriberVerticle)
 vertx.eventBus().consumer("system.events", msg -> {
     System.out.println("Received: " + msg.body());
-    // Pas de msg.reply() ici!
+    // No msg.reply() here!
 });
 ```
 
-**Différences clés:**
+**Key differences:**
 | Request/Reply | Publish/Subscribe |
 |---|---|
-| UN handler répond | TOUS reçoivent |
-| Réponse attendue | Pas de réponse |
+| ONE handler responds | ALL receive |
+| Response expected | No response |
 | Point-to-point | Broadcast |
-| Cas: données | Cas: notifications |
+| Use case: data | Use case: notifications |
 
 ---
 
-### 3️⃣ OPERATIONS ASYNCHRONES (Non-bloquant)
+### 3️⃣ ASYNCHRONOUS OPERATIONS (Non-blocking)
 
-**Le "vrai" Vert.x - l'asynchrone!**
+**The "real" Vert.x - asynchronous magic!**
 
 ```java
-// ❌ BLOQUANT (NON-vert.x!)
-DB.query("SELECT * FROM users WHERE id=1");  // Attend 200ms
+// ❌ BLOCKING (NON-vert.x!)
+DB.query("SELECT * FROM users WHERE id=1");  // Waits 200ms
 response.end(result);
 
-// ✅ NON-BLOQUANT (Vert.x goodness!)
+// ✅ NON-BLOCKING (Vert.x goodness!)
 vertx.eventBus().request("db.query", userId)
     .onSuccess(reply -> response.end(reply.body().toString()))
     .onFailure(err -> response.end("Error"));
-// Continue immédiatement, traite autres requêtes!
+// Continues immediately, processes other requests!
 ```
 
-**Pourquoi c'est important:**
-- 1 thread = peut traiter des milliers de requêtes
-- Pas d'attente bloquante
-- Haute performance
+**Why it matters:**
+- 1 thread = can handle thousands of requests
+- No blocking waits
+- High performance
 
-**Avec timers (simule DB delay):**
+**With timers (simulates DB delay):**
 ```java
 vertx.setTimer(200, timerId -> {
-    // Après 200ms, ceci s'exécute
-    msg.reply(result);  // Envoie la réponse
+    // After 200ms, this executes
+    msg.reply(result);  // Send the response
 });
 ```
 
 ---
 
-## FLUX D'UNE REQUÊTE HTTP
+## HTTP REQUEST FLOW
 
 ```
 1. GET /api/users/1
@@ -129,66 +129,66 @@ vertx.setTimer(200, timerId -> {
    ↓
 3. vertx.eventBus().request("db.query", "1")
    ↓
-4. [Infinispan cherche qui a "db.query" consumer]
+4. [Infinispan looks up who has "db.query" consumer]
    ↓
-5. DatabaseVerticle (une des 2 instances) reçoit
+5. DatabaseVerticle (one of 2 instances) receives
    ↓
-6. vertx.setTimer(200ms) → simule DB query
+6. vertx.setTimer(200ms) → simulates DB query
    ↓
-7. msg.reply(JsonObject user) → retourne la réponse
+7. msg.reply(JsonObject user) → returns the response
    ↓
 8. onSuccess() → ctx.response().end(user)
    ↓
-9. HTTP 200 + JSON au client
+9. HTTP 200 + JSON to client
 ```
 
 ---
 
-## FICHIERS FOURNIS
+## PROVIDED FILES
 
 ### MainVerticle.java (Original)
-- Route HTTP: `/api/v1/hello`
-- Request/Reply: un seul handler répond
-- 4 instances HelloVerticle
+- HTTP route: `/api/v1/hello`
+- Request/Reply: only one handler responds
+- 4 HelloVerticle instances
 
-### AdvancedMainVerticle.java (Nouveau)
-- Route HTTP CRUD: `/api/users/{id}`
-- Déploie: Database + Publisher + Subscribers
+### AdvancedMainVerticle.java (New)
+- CRUD HTTP route: `/api/users/{id}`
+- Deploys: Database + Publisher + Subscribers
 - Port: 9090
 
-### DatabaseVerticle.java (Nouveau)
-- Simule une BD avec delays
+### DatabaseVerticle.java (New)
+- Simulates a database with delays
 - Handlers: db.query, db.insert, db.update, db.delete
-- 2 instances pour HA
+- 2 instances for HA
 
-### EventPublisherVerticle.java (Nouveau)
-- Pub/Sub: envoie événements toutes les 3sec
-- Tous les subscribers reçoivent
+### EventPublisherVerticle.java (New)
+- Pub/Sub: sends events every 3 seconds
+- All subscribers receive them
 
-### EventSubscriberVerticle.java (Nouveau)
-- Reçoit les événements publiés
-- 3 instances pour voir le broadcast
+### EventSubscriberVerticle.java (New)
+- Receives published events
+- 3 instances to see broadcast in action
 
 ---
 
-## TESTER
+## TESTING
 
 ### Compilation
 ```bash
 mvn clean package
 ```
 
-### Lancer original (port 8080)
+### Run original (port 8080)
 ```bash
 java -cp target/classes:~/.m2/repository/... me.akhalef.MainVerticle
 ```
 
-### Lancer avancé (port 9090)
+### Run advanced (port 9090)
 ```bash
 java -Dhttp.port=9090 -cp target/classes:~/.m2/repository/... me.akhalef.AdvancedMainVerticle
 ```
 
-### Tester endpoints
+### Test endpoints
 ```bash
 # GET user
 curl http://localhost:9090/api/users/1
@@ -207,51 +207,51 @@ curl -X PUT http://localhost:9090/api/users/1 \
 curl -X DELETE http://localhost:9090/api/users/2
 ```
 
-### Observer console
-- DatabaseVerticle logs: calls DB, shows delays
-- EventSubscriberVerticle logs: reçoit tous les événements
-- EventPublisherVerticle logs: envoie chaque 3sec
+### Watch console
+- DatabaseVerticle logs: database calls, shows delays
+- EventSubscriberVerticle logs: receives all events
+- EventPublisherVerticle logs: sends every 3 seconds
 
 ---
 
-## INFINISPAN - Rôle dans tout ça
+## INFINISPAN - Role in all this
 
 ```
 Vert.x Event Bus
     ↓
 Infinispan (Manager)
-    ├─ Tient une liste des consumers ("hello.vertx.address" → 4 handlers)
-    ├─ Décide qui reçoit (round-robin pour request/reply)
-    ├─ Distribue à tous (publish/subscribe)
-    └─ Synchronise entre instances si multi-machine
+    ├─ Maintains list of consumers ("hello.vertx.address" → 4 handlers)
+    ├─ Decides who receives (round-robin for request/reply)
+    ├─ Distributes to all (publish/subscribe)
+    └─ Synchronizes between instances if multi-machine
                 ↓
                 JGroups (port 7800)
                 ↓
-        [Peut parler à autre machine]
+        [Can communicate with other machines]
 ```
 
-**Sans Infinispan:** Event bus local seulement (pas de clustering)
-**Avec Infinispan:** Event bus distribuable entre machines
+**Without Infinispan:** Local event bus only (no clustering)
+**With Infinispan:** Event bus distributable across machines
 
 ---
 
-## RECAP: LES 3 VERTICLES EXPLICITES
+## RECAP: THE 5 KEY VERTICLES
 
-| Verticle | Rôle | Instances | Exemple Message |
+| Verticle | Role | Instances | Example Message |
 |---|---|---|---|
-| **MainVerticle** | HTTP server + déploie autres | 1 | GET /api/v1/hello |
-| **HelloVerticle** | Répond à requêtes hello | 4 | "Hello Ahmed!" |
-| **DatabaseVerticle** | Simule une BD | 2 | Query/Insert/Update/Delete |
-| **EventPublisherVerticle** | Envoie événements | 1 | "Event-12345" toutes les 3sec |
-| **EventSubscriberVerticle** | Reçoit événements | 3 | Tous reçoivent chaque publication |
+| **MainVerticle** | HTTP server + deploys others | 1 | GET /api/v1/hello |
+| **HelloVerticle** | Responds to hello requests | 4 | "Hello Ahmed!" |
+| **DatabaseVerticle** | Simulates a database | 2 | Query/Insert/Update/Delete |
+| **EventPublisherVerticle** | Sends events | 1 | "Event-12345" every 3 sec |
+| **EventSubscriberVerticle** | Receives events | 3 | All receive each publication |
 
 ---
 
-## POINTS CLÉS À RETENIR
+## KEY TAKEAWAYS
 
-1. **Verticles** = acteurs indépendants (peut avoir plusieurs copies)
-2. **Event Bus** = système de messaging (request/reply OU publish/subscribe)
-3. **Asynchrone** = non-bloquant, traite plein de requêtes avec peu de threads
-4. **Infinispan** = permet de distribuer l'event bus sur plusieurs machines
-5. **Résilience** = plusieurs instances = haute disponibilité
+1. **Verticles** = independent actors (can have multiple copies)
+2. **Event Bus** = messaging system (request/reply OR publish/subscribe)
+3. **Asynchronous** = non-blocking, processes many requests with few threads
+4. **Infinispan** = enables event bus distribution across multiple machines
+5. **Resilience** = multiple instances = high availability
 
