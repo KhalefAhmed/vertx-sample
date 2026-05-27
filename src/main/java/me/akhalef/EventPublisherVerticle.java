@@ -7,7 +7,7 @@ public class EventPublisherVerticle extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> startPromise) {
-        System.out.println("✅ EventPublisherVerticle démarré");
+        System.out.println("EventPublisherVerticle démarré");
 
         vertx.setPeriodic(3000, timerId -> {
             String event = "Event-" + System.currentTimeMillis();
@@ -21,7 +21,7 @@ public class EventPublisherVerticle extends AbstractVerticle {
 
     @Override
     public void stop(Promise<Void> stopPromise) {
-        System.out.println("❌ EventPublisherVerticle arrêté");
+        System.out.println("EventPublisherVerticle arrêté");
         stopPromise.complete();
     }
 }

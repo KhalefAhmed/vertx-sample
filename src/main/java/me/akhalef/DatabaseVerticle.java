@@ -14,7 +14,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
-        System.out.println("✅ DatabaseVerticle [" + verticleId + "] démarré");
+        System.out.println("DatabaseVerticle [" + verticleId + "] démarré");
 
         database.put("user:1", new JsonObject()
                 .put("id", "1")
@@ -25,11 +25,9 @@ public class DatabaseVerticle extends AbstractVerticle {
                 .put("name", "Bob")
                 .put("email", "bob@example.com"));
 
-        // Handler pour SELECT (query)
         vertx.eventBus().consumer("db.query", msg -> {
             String userId = msg.body().toString();
 
-            // Simuler un délai réseau/DB de 200ms
             vertx.setTimer(200, timerId -> {
                 JsonObject user = database.get("user:" + userId);
                 if (user != null) {
@@ -42,7 +40,6 @@ public class DatabaseVerticle extends AbstractVerticle {
             });
         });
 
-        // Handler pour INSERT
         vertx.eventBus().consumer("db.insert", msg -> {
             JsonObject newUser = (JsonObject) msg.body();
 
@@ -56,7 +53,6 @@ public class DatabaseVerticle extends AbstractVerticle {
             });
         });
 
-        // Handler pour UPDATE
         vertx.eventBus().consumer("db.update", msg -> {
             JsonObject updateData = (JsonObject) msg.body();
             String userId = updateData.getString("id");
@@ -65,10 +61,10 @@ public class DatabaseVerticle extends AbstractVerticle {
                 if (database.containsKey("user:" + userId)) {
                     JsonObject existing = database.get("user:" + userId);
                     existing.mergeIn(updateData);
-                    System.out.println("✏️ [DB-" + verticleId + "] Updated user:" + userId);
+                    System.out.println("[DB-" + verticleId + "] Updated user:" + userId);
                     msg.reply(new JsonObject().put("status", "updated"));
                 } else {
-                    System.out.println("❌ [DB-" + verticleId + "] Update failed: user:" + userId + " not found");
+                    System.out.println("[DB-" + verticleId + "] Update failed: user:" + userId + " not found");
                     msg.fail(404, "User not found");
                 }
             });
@@ -80,10 +76,10 @@ public class DatabaseVerticle extends AbstractVerticle {
 
             vertx.setTimer(200, timerId -> {
                 if (database.remove("user:" + userId) != null) {
-                    System.out.println("🗑️ [DB-" + verticleId + "] Deleted user:" + userId);
+                    System.out.println("[DB-" + verticleId + "] Deleted user:" + userId);
                     msg.reply(new JsonObject().put("status", "deleted"));
                 } else {
-                    System.out.println("❌ [DB-" + verticleId + "] Delete failed: user:" + userId + " not found");
+                    System.out.println("[DB-" + verticleId + "] Delete failed: user:" + userId + " not found");
                     msg.fail(404, "User not found");
                 }
             });
